@@ -46,6 +46,7 @@ const defaultPermissions = {
 
 const $ = (id) => document.getElementById(id);
 let sessionUser = null;
+const localDataKey = "ibuild_local_data_v2";
 
 async function api(path, options = {}) {
   const response = await fetch(path, {
@@ -65,9 +66,39 @@ function toast(message) {
 
 async function load() {
   Object.assign(state, await api("/api/bootstrap"));
+  mergeLocalState();
   restoreSession();
   renderAll();
   applyInitialRoute();
+}
+
+function loadLocalData() {
+  try {
+    return JSON.parse(localStorage.getItem(localDataKey) || "{}");
+  } catch {
+    return {};
+  }
+}
+
+function mergeLocalState() {
+  const local = loadLocalData();
+  ["users", "clients", "sites"].forEach((key) => {
+    if (Array.isArray(local[key])) state[key] = local[key];
+  });
+}
+
+function persistLocalState() {
+  const local = loadLocalData();
+  local.users = state.users;
+  local.clients = state.clients;
+  local.sites = state.sites;
+  localStorage.setItem(localDataKey, JSON.stringify(local));
+}
+
+function upsertById(list, item) {
+  const index = list.findIndex((entry) => entry.id === item.id);
+  if (index === -1) list.push(item);
+  else list[index] = { ...list[index], ...item };
 }
 
 function restoreSession() {
@@ -750,15 +781,36 @@ async function saveSite(event) {
   };
   const siteId = $("siteId").value;
   if (siteId) {
-    await api(`/api/sites/${siteId}`, { method: "PUT", body: JSON.stringify(payload) });
+    const updated = await api(`/api/sites/${siteId}`, { method: "PUT", body: JSON.stringify(payload) });
+    upsertById(state.sites, updated);
+    if (payload.clientName) {
+      upsertById(state.clients, {
+        id: updated.clientId || payload.clientId || `c-${siteId}`,
+        name: payload.clientName,
+        contactName: payload.clientContact,
+        phone: "",
+        email: ""
+      });
+    }
     toast("تم تعديل الموقع");
   } else {
-    await api("/api/sites", { method: "POST", body: JSON.stringify(payload) });
+    const created = await api("/api/sites", { method: "POST", body: JSON.stringify(payload) });
+    upsertById(state.sites, created);
+    if (payload.clientName && !existingClient) {
+      upsertById(state.clients, {
+        id: created.clientId,
+        name: payload.clientName,
+        contactName: payload.clientContact,
+        phone: "",
+        email: ""
+      });
+    }
     toast("تمت إضافة الموقع");
   }
   $("siteForm").reset();
   $("siteId").value = "";
-  await load();
+  persistLocalState();
+  renderAll();
 }
 
 async function saveContract(event) {
@@ -821,8 +873,10 @@ window.editSite = (id) => {
 window.deleteSite = async (id) => {
   if (!confirm("هل تريد حذف الموقع؟")) return;
   await api(`/api/sites/${id}`, { method: "DELETE" });
+  state.sites = state.sites.filter((site) => site.id !== id);
+  persistLocalState();
   toast("تم حذف الموقع");
-  await load();
+  renderAll();
 };
 
 window.openInspection = (id) => {
@@ -1120,7 +1174,7 @@ function pageLabel(page) {
 async function saveUser(event) {
   event.preventDefault();
   if (currentRole() !== "general_manager") return toast("المدير العام فقط يمكنه إضافة مستخدم");
-  await api("/api/users", {
+  const created = await api("/api/users", {
     method: "POST",
     body: JSON.stringify({
       fullName: $("userFullName").value.trim(),
@@ -1130,10 +1184,12 @@ async function saveUser(event) {
       pages: checkedPages("newUserPages")
     })
   });
+  upsertById(state.users, created);
+  persistLocalState();
   $("userForm").reset();
   renderNewUserPermissionOptions();
   toast("تم حفظ المستخدم");
-  await load();
+  renderAll();
 }
 
 window.saveUserPages = async (id) => {
@@ -1144,16 +1200,20 @@ window.saveUserPages = async (id) => {
     method: "PUT",
     body: JSON.stringify({ pages: checkedPages(`pages_${id}`) })
   });
+  user.pages = checkedPages(`pages_${id}`);
+  persistLocalState();
   toast(`تم حفظ صلاحيات ${user.fullName}`);
-  await load();
+  renderAll();
 };
 
 window.deleteUser = async (id) => {
   if (currentRole() !== "general_manager") return toast("المدير العام فقط");
   if (!confirm("حذف المستخدم؟")) return;
   await api(`/api/users/${id}`, { method: "DELETE" });
+  state.users = state.users.filter((user) => user.id !== id);
+  persistLocalState();
   toast("تم حذف المستخدم");
-  await load();
+  renderAll();
 };
 
 function login() {
