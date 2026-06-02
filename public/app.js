@@ -1161,8 +1161,15 @@ function login() {
   const username = $("loginUsername").value.trim();
   const password = $("loginPassword").value;
   const user = state.users.find((item) => {
+    const itemUsernames = [
+      item.username,
+      item.email,
+      item.role === "general_manager" ? "general" : "",
+      item.role === "operations_manager" ? "operations" : "",
+      item.role === "supervisor" ? "supervisor" : ""
+    ].filter(Boolean).map((value) => String(value).toLowerCase());
     const userNameMatches = username
-      ? (item.username || item.email || "").toLowerCase() === username.toLowerCase()
+      ? itemUsernames.includes(username.toLowerCase())
       : item.role === role;
     return userNameMatches && item.password === password && item.active !== false;
   });

@@ -20,9 +20,9 @@ const defaultPagesByRole = {
 
 const seed = {
   users: [
-    { id: "u1", fullName: "المدير العام", username: "general", password: "123456", role: "general_manager", active: true },
-    { id: "u2", fullName: "مدير العمليات", username: "operations", password: "123456", role: "operations_manager", active: true },
-    { id: "u3", fullName: "مشرف النظافة", username: "supervisor", password: "123456", role: "supervisor", active: true },
+    { id: "u1", fullName: "المدير العام", username: "admin@ibuild.local", email: "admin@ibuild.local", password: "123456", role: "general_manager", active: true },
+    { id: "u2", fullName: "مدير العمليات", username: "ops@ibuild.local", email: "ops@ibuild.local", password: "123456", role: "operations_manager", active: true },
+    { id: "u3", fullName: "مشرف النظافة", username: "supervisor@ibuild.local", email: "supervisor@ibuild.local", password: "123456", role: "supervisor", active: true },
     { id: "u4", fullName: "أمين المخزن", username: "storekeeper", password: "123456", role: "storekeeper", active: true }
   ],
   clients: [
@@ -74,19 +74,21 @@ async function readJson() {
 function normalizeDb(db) {
   db.users = (db.users || []).map((user) => {
     const role = user.role === "system_admin" ? "general_manager" : user.role;
+    const canonical = canonicalDefaultUser(role, user);
     const pages = sanitizePages(user.pages, role);
     return {
       username: user.email || user.username || "",
       password: user.password || "123456",
       active: true,
       ...user,
+      ...canonical,
       role,
       pages
     };
   });
-  ensureUser(db, { id: "u1", fullName: "المدير العام", username: "general", password: "123456", role: "general_manager", active: true });
-  ensureUser(db, { id: "u2", fullName: "مدير العمليات", username: "operations", password: "123456", role: "operations_manager", active: true });
-  ensureUser(db, { id: "u3", fullName: "مشرف النظافة", username: "supervisor", password: "123456", role: "supervisor", active: true });
+  ensureUser(db, { id: "u1", fullName: "المدير العام", username: "admin@ibuild.local", email: "admin@ibuild.local", password: "123456", role: "general_manager", active: true });
+  ensureUser(db, { id: "u2", fullName: "مدير العمليات", username: "ops@ibuild.local", email: "ops@ibuild.local", password: "123456", role: "operations_manager", active: true });
+  ensureUser(db, { id: "u3", fullName: "مشرف النظافة", username: "supervisor@ibuild.local", email: "supervisor@ibuild.local", password: "123456", role: "supervisor", active: true });
   ensureUser(db, { id: "u4", fullName: "أمين المخزن", username: "storekeeper", password: "123456", role: "storekeeper", active: true });
   db.materials = (db.materials || []).map((material) => {
     const currentStock = Number(material.currentStock ?? material.openingStock ?? 0);
@@ -159,6 +161,20 @@ function sanitizePages(pages, role) {
   if (role === "general_manager") return [...pageIds];
   const cleaned = Array.isArray(pages) ? pages.filter((page) => pageIds.includes(page)) : [];
   return cleaned.length ? [...new Set(cleaned)] : [...(defaultPagesByRole[role] || [])];
+}
+
+function canonicalDefaultUser(role, user) {
+  const username = user.username || user.email || "";
+  if (role === "general_manager" && (username === "general" || username === "admin@ibuild.local")) {
+    return { username: "admin@ibuild.local", email: "admin@ibuild.local" };
+  }
+  if (role === "operations_manager" && (username === "operations" || username === "ops@ibuild.local")) {
+    return { username: "ops@ibuild.local", email: "ops@ibuild.local" };
+  }
+  if (role === "supervisor" && (username === "supervisor" || username === "supervisor@ibuild.local")) {
+    return { username: "supervisor@ibuild.local", email: "supervisor@ibuild.local" };
+  }
+  return {};
 }
 
 async function writeJson(data) {
