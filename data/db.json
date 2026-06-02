@@ -1,0 +1,127 @@
+{
+  "users": [
+    {
+      "username": "admin@ibuild.local",
+      "password": "123456",
+      "active": true,
+      "id": "u1",
+      "fullName": "مدير النظام",
+      "email": "admin@ibuild.local",
+      "role": "general_manager"
+    },
+    {
+      "username": "ops@ibuild.local",
+      "password": "123456",
+      "active": true,
+      "id": "u2",
+      "fullName": "مدير العمليات",
+      "email": "ops@ibuild.local",
+      "role": "operations_manager"
+    },
+    {
+      "username": "supervisor@ibuild.local",
+      "password": "123456",
+      "active": true,
+      "id": "u3",
+      "fullName": "مشرف النظافة",
+      "email": "supervisor@ibuild.local",
+      "role": "supervisor"
+    },
+    {
+      "id": "u4",
+      "fullName": "أمين المخزن",
+      "username": "storekeeper",
+      "password": "123456",
+      "role": "storekeeper",
+      "active": true
+    }
+  ],
+  "clients": [
+    {
+      "id": "c1",
+      "name": "عميل تجريبي",
+      "contactName": "مسؤول الموقع",
+      "phone": "01000000000",
+      "email": "client@example.com"
+    },
+    {
+      "id": "cmpvmp1ywn19z1",
+      "name": "عميل اختبار",
+      "contactName": "مسؤول اختبار",
+      "phone": "",
+      "email": ""
+    }
+  ],
+  "sites": [
+    {
+      "id": "s2",
+      "clientId": "c1",
+      "name": "فرع التجمع",
+      "address": "التجمع الخامس",
+      "city": "القاهرة",
+      "status": "active",
+      "qrToken": "site-s2"
+    }
+  ],
+  "inspections": [
+    {
+      "id": "i1",
+      "siteId": "s1",
+      "supervisorName": "مشرف النظافة",
+      "inspectedAt": "2026-06-01T19:54:39.544Z",
+      "rating": "excellent",
+      "notes": "الحالة ممتازة"
+    },
+    {
+      "id": "i2",
+      "siteId": "s2",
+      "supervisorName": "مشرف النظافة",
+      "inspectedAt": "2026-06-01T19:54:39.545Z",
+      "rating": "needs_followup",
+      "notes": "يحتاج متابعة في منطقة المدخل"
+    }
+  ],
+  "materials": [
+    {
+      "openingStock": 45,
+      "unitCost": 0,
+      "minStock": 20,
+      "unit": "لتر",
+      "id": "m1",
+      "name": "مطهر أرضيات",
+      "currentStock": 45
+    },
+    {
+      "openingStock": 18,
+      "unitCost": 0,
+      "minStock": 30,
+      "unit": "رول",
+      "id": "m2",
+      "name": "أكياس قمامة",
+      "currentStock": 18
+    }
+  ],
+  "materialTransactions": [
+    {
+      "issueNo": "",
+      "unitCost": 0,
+      "totalCost": 0,
+      "balanceBefore": null,
+      "balanceAfter": null,
+      "siteBalanceBefore": null,
+      "siteBalanceAfter": null,
+      "id": "t1",
+      "materialId": "m1",
+      "siteId": "s1",
+      "txType": "site_out",
+      "quantity": 5,
+      "deliveredBy": "المخزن",
+      "receivedBy": "مشرف النظافة",
+      "createdAt": "2026-06-01T19:54:39.545Z"
+    }
+  ],
+  "drivers": [],
+  "vehicles": [],
+  "contracts": [],
+  "vehicleMovements": []
+}

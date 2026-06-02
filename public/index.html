@@ -1,0 +1,538 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>النظام الذكي لشركة I-BUILD لإدارة الأصول</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/styles.css?v=logo-ibuild-1">
+  </head>
+  <body class="is-locked">
+    <header class="topbar">
+      <div class="brand">
+        <div class="mark"><img class="brand-logo" src="/ibuild-logo.svg" alt="I-Build"></div>
+        <div>
+          <strong>نظام I-BUILD الذكي لإدارة النظافة</strong>
+          <span>النظام الذكي لشركة I-BUILD لإدارة الأصول والتشغيل</span>
+        </div>
+      </div>
+      <div class="role-switch">
+        <label for="role">تسجيل الدخول</label>
+        <select id="role">
+          <option value="general_manager">المدير العام</option>
+          <option value="operations_manager">مدير العمليات</option>
+          <option value="supervisor">المشرف</option>
+          <option value="storekeeper">أمين المخزن</option>
+        </select>
+        <input id="loginUsername" type="text" placeholder="اليوزر">
+        <input id="loginPassword" type="password" placeholder="الباسورد">
+        <button class="primary" id="loginButton" type="button">دخول</button>
+        <button class="ghost" id="logoutButton" type="button">خروج</button>
+        <span id="loginStatus"></span>
+      </div>
+    </header>
+
+    <nav class="tabs" aria-label="التنقل الرئيسي">
+      <button class="tab is-active" data-page="dashboard">لوحة التحكم</button>
+      <button class="tab" data-page="sites">المواقع</button>
+      <button class="tab" data-page="contracts">عقود النظافة</button>
+      <button class="tab" data-page="inspection">التفتيش اليومي</button>
+      <button class="tab" data-page="materials">الخامات</button>
+      <button class="tab" data-page="reports">التقارير</button>
+      <button class="tab" data-page="users">الصلاحيات</button>
+      <button class="tab" data-page="vehicles">حركة السيارات</button>
+    </nav>
+
+    <section id="loginGate" class="login-gate">
+      <div class="login-card">
+        <p class="eyebrow">تأمين النظام</p>
+        <h1>كل لوحة تعمل بالباسورد حسب الصلاحية</h1>
+        <p>اكتب الباسورد من أعلى الصفحة للدخول. باسورد المدير العام يفتح كل أجزاء النظام.</p>
+        <div class="login-hints">
+          <span>المدير العام: كل الصلاحيات</span>
+          <span>مدير العمليات: التشغيل والتقارير</span>
+          <span>المشرف: التفتيش والتقارير</span>
+          <span>أمين المخزن: الخامات والتقارير</span>
+        </div>
+      </div>
+    </section>
+
+    <main>
+      <section id="dashboard" class="page is-active">
+        <div class="dashboard-shell">
+        <div class="dashboard-hero">
+          <div>
+            <p class="eyebrow">نظرة الإدارة</p>
+            <h1>النظام الذكي لشركة I-BUILD لإدارة الأصول</h1>
+            <p>لوحة تشغيل موحدة لمتابعة المواقع، الأصول، فرق العمل، المخزون، الصرف اليومي، ومؤشرات الأداء.</p>
+          </div>
+          <div class="hero-actions">
+            <button class="ghost" id="refresh">تحديث البيانات</button>
+            <span id="dashboardDate"></span>
+          </div>
+        </div>
+        <div class="stats" id="stats"></div>
+        <div class="dashboard-grid">
+          <article class="panel dash-panel priority-panel">
+            <h2>المواقع التي تحتاج تدخل</h2>
+            <div id="attentionSites" class="list"></div>
+          </article>
+          <article class="panel dash-panel">
+            <h2>المشرف النشيط</h2>
+            <div id="activeSupervisor" class="list"></div>
+          </article>
+          <article class="panel dash-panel wide-panel">
+            <h2>المخزون في كل موقع</h2>
+            <div id="siteStockList" class="list"></div>
+          </article>
+          <article class="panel dash-panel">
+            <h2>الصرف اليومي للمواقع</h2>
+            <div id="dailySiteUsage" class="list"></div>
+          </article>
+          <article class="panel dash-panel">
+            <h2>مؤشرات المخزون الرئيسي</h2>
+            <div id="materialBars"></div>
+          </article>
+          <article class="panel dash-panel wide-panel">
+            <h2>متابعة عقود النظافة اليومية</h2>
+            <div id="contractDailyStatus" class="list"></div>
+          </article>
+        </div>
+        </div>
+      </section>
+
+      <section id="sites" class="page">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">إدارة المواقع</p>
+            <h1>المواقع والعملاء و QR</h1>
+          </div>
+        </div>
+        <div class="grid form-layout">
+          <form id="siteForm" class="panel form">
+            <h2>إضافة / تعديل موقع</h2>
+            <input type="hidden" id="siteId">
+            <label>اسم الموقع<input id="siteName" required placeholder="مثال: فرع التجمع"></label>
+            <label>اسم العميل<input id="clientName" required placeholder="اسم العميل"></label>
+            <label>بيانات العميل<input id="clientContact" placeholder="اسم المسؤول / الهاتف"></label>
+            <label>عنوان الموقع<textarea id="siteAddress" required placeholder="العنوان التفصيلي"></textarea></label>
+            <label>المدينة<input id="siteCity" placeholder="القاهرة"></label>
+            <div class="actions">
+              <button class="primary" type="submit">حفظ الموقع</button>
+              <button class="ghost" type="button" id="resetSite">تفريغ</button>
+            </div>
+          </form>
+          <article class="panel">
+            <h2>رفع شيت المواقع وتوليد QR</h2>
+            <form id="siteSheetForm" class="form">
+              <label>ملف المواقع
+                <input id="siteSheetFile" type="file" accept=".csv,.xlsx,.xls" required>
+              </label>
+              <div class="grid two">
+                <label>اسم العميل الافتراضي<input id="sheetClientName" placeholder="يستخدم لو الشيت لا يحتوي عميل"></label>
+                <label>المدينة الافتراضية<input id="sheetCity" placeholder="القاهرة"></label>
+              </div>
+              <p class="hint">الأعمدة المدعومة: اسم الموقع، الموقع، Site، العميل، Client، العنوان، Address، المدينة، City.</p>
+              <button class="primary" type="submit">استيراد المواقع وتوليد QR</button>
+            </form>
+            <div class="template-box">
+              <div class="table-head">
+                <h2>شكل شيت المواقع المطلوب</h2>
+                <button class="ghost" type="button" id="downloadSiteTemplate">تنزيل قالب CSV</button>
+              </div>
+              <div class="table-wrap">
+                <table class="template-table">
+                  <thead>
+                    <tr>
+                      <th>اسم الموقع</th>
+                      <th>اسم العميل</th>
+                      <th>بيانات العميل</th>
+                      <th>عنوان الموقع</th>
+                      <th>المدينة</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>فرع التجمع</td>
+                      <td>I-BUILD</td>
+                      <td>أحمد محمد - 01000000000</td>
+                      <td>التجمع الخامس - شارع التسعين</td>
+                      <td>القاهرة</td>
+                    </tr>
+                    <tr>
+                      <td>المقر الإداري</td>
+                      <td>I-BUILD</td>
+                      <td>مسؤول الموقع - 01111111111</td>
+                      <td>القاهرة الجديدة</td>
+                      <td>القاهرة</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div id="sheetImportResult" class="import-result"></div>
+          </article>
+        </div>
+        <div class="grid one">
+          <article class="panel">
+            <div class="table-head">
+              <h2>قائمة المواقع</h2>
+              <input id="siteSearch" placeholder="بحث باسم الموقع أو العميل">
+            </div>
+            <div id="sitesList" class="cards"></div>
+          </article>
+        </div>
+      </section>
+
+      <section id="contracts" class="page">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">عقود النظافة</p>
+            <h1>قيمة العامل ومتابعة تنفيذ العقد</h1>
+          </div>
+        </div>
+        <div class="grid form-layout">
+          <form id="contractForm" class="panel form">
+            <h2>إضافة / تعديل عقد</h2>
+            <input type="hidden" id="contractId">
+            <label>الموقع<select id="contractSite" required></select></label>
+            <label>اسم العقد<input id="contractName" required placeholder="مثال: عقد نظافة المقر الإداري"></label>
+            <label>عدد العمال المتفق عليه يوميًا<input id="plannedWorkers" type="number" min="0" value="0" required></label>
+            <label>قيمة العامل في اليوم<input id="workerDailyValue" type="number" min="0" step="0.01" value="0" required></label>
+            <div class="grid two">
+              <label>بداية العقد<input id="contractStart" type="date"></label>
+              <label>نهاية العقد<input id="contractEnd" type="date"></label>
+            </div>
+            <div class="actions">
+              <button class="primary" type="submit">حفظ العقد</button>
+              <button class="ghost" type="button" id="resetContract">تفريغ</button>
+            </div>
+          </form>
+          <article class="panel">
+            <h2>العقود المسجلة</h2>
+            <div id="contractsList" class="cards"></div>
+          </article>
+        </div>
+      </section>
+
+      <section id="inspection" class="page">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">التفتيش اليومي</p>
+            <h1>نموذج زيارة الموقع</h1>
+          </div>
+        </div>
+        <form id="inspectionForm" class="panel form wide">
+          <div class="grid three">
+            <label>الموقع<select id="inspectionSite" required></select></label>
+            <label>اسم المشرف<input id="supervisorName" required placeholder="اسم المشرف"></label>
+            <label>التاريخ والوقت<input id="inspectionTime" readonly></label>
+          </div>
+          <div class="grid two">
+            <label>عدد العمالة الموجودة<input id="workersPresent" type="number" min="0" value="0"></label>
+            <label>عدد الغياب<input id="workersAbsent" type="number" min="0" value="0"></label>
+          </div>
+          <div class="grid three">
+            <label>GPS Latitude<input id="gpsLat" placeholder="يتم ملؤه تلقائيا"></label>
+            <label>GPS Longitude<input id="gpsLng" placeholder="يتم ملؤه تلقائيا"></label>
+            <button class="ghost align-end" type="button" id="getGps">تحديد GPS</button>
+          </div>
+          <div class="grid two">
+            <label>صورة قبل التنفيذ<input id="beforePhoto" type="file" accept="image/*"></label>
+            <label>صورة بعد التنفيذ<input id="afterPhoto" type="file" accept="image/*"></label>
+          </div>
+          <label>تقييم حالة الموقع
+            <select id="inspectionRating" required>
+              <option value="excellent">ممتاز</option>
+              <option value="good">جيد</option>
+              <option value="needs_followup">يحتاج متابعة</option>
+              <option value="critical">حالة حرجة</option>
+            </select>
+          </label>
+          <label>ملاحظات<textarea id="inspectionNotes" placeholder="تفاصيل الزيارة والملاحظات"></textarea></label>
+          <div class="actions">
+            <button class="primary" type="submit">تسجيل التفتيش</button>
+          </div>
+        </form>
+      </section>
+
+      <section id="materials" class="page">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">إدارة الخامات</p>
+            <h1>مخزن النظافة - وارد ومنصرف</h1>
+          </div>
+        </div>
+        <div class="warehouse-summary" id="warehouseSummary"></div>
+        <div class="grid three">
+          <form id="materialForm" class="panel form">
+            <h2>إضافة خامة</h2>
+            <label>اسم الخامة<input id="materialName" required placeholder="مطهر، مناديل، أكياس..."></label>
+            <label>الوحدة<input id="materialUnit" required value="قطعة"></label>
+            <label>حد التنبيه<input id="materialMin" type="number" min="0" value="10"></label>
+            <label>رصيد أول المدة<input id="materialOpening" type="number" min="0" value="0"></label>
+            <label>تكلفة الوحدة<input id="materialCost" type="number" min="0" step="0.01" value="0"></label>
+            <button class="primary" type="submit">إضافة الخامة</button>
+          </form>
+          <form id="materialSheetForm" class="panel form">
+            <h2>رفع Excel الأصناف والكميات</h2>
+            <label>ملف الأصناف
+              <input id="materialSheetFile" type="file" accept=".csv,.xlsx,.xls" required>
+            </label>
+            <p class="hint">الأعمدة المدعومة: الصنف، Item، الوحدة، Unit، رصيد أول، Opening، الكمية، Quantity، التكلفة، Cost، حد التنبيه.</p>
+            <button class="primary" type="submit">استيراد للمخزن الرئيسي</button>
+            <div id="materialImportResult" class="import-result"></div>
+          </form>
+          <form id="txForm" class="panel form">
+            <h2>إذن صرف / إضافة مخزن</h2>
+            <p class="hint">التحويل لموقع يخصم من المخزن الرئيسي ويضيف للمخزن الفرعي. صرف المشرف يخصم من مخزن الموقع ويظهر في صرف اليوم.</p>
+            <label>رقم الإذن<input id="issueNo" placeholder="يصنع تلقائيا إذا ترك فارغا"></label>
+            <label>الخامة<select id="txMaterial" required></select></label>
+            <label>نوع الحركة
+              <select id="txType">
+                <option value="stock_in">وارد - استلام للمخزن</option>
+                <option value="site_out">تحويل من الرئيسي إلى مخزن الموقع</option>
+                <option value="site_use">صرف من مخزن الموقع بواسطة المشرف</option>
+              </select>
+            </label>
+            <label>الموقع<select id="txSite"></select></label>
+            <label>الكمية<input id="txQuantity" required type="number" min="1" value="1"></label>
+            <label>تكلفة الوحدة<input id="txUnitCost" type="number" min="0" step="0.01" placeholder="تؤخذ من الصنف تلقائيا"></label>
+            <label>اسم المسلم<input id="deliveredBy" required></label>
+            <label>اسم المستلم<input id="receivedBy" required></label>
+            <label>صورة التسليم<input id="deliveryPhoto" type="file" accept="image/*"></label>
+            <button class="primary" type="submit">تسجيل الحركة</button>
+          </form>
+        </div>
+        <article class="panel">
+          <h2>رصيد الخامات والتنبيهات</h2>
+          <div id="materialsList" class="cards"></div>
+        </article>
+        <article class="panel">
+          <h2>سجل حركة المخزن</h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>التاريخ</th>
+                  <th>الحركة</th>
+                  <th>الخامة</th>
+                  <th>الموقع</th>
+                  <th>الكمية</th>
+                  <th>رصيد قبل</th>
+                  <th>رصيد بعد</th>
+                  <th>تكلفة الوحدة</th>
+                  <th>إجمالي التكلفة</th>
+                  <th>المسلم</th>
+                  <th>المستلم</th>
+                </tr>
+              </thead>
+              <tbody id="warehouseTable"></tbody>
+            </table>
+          </div>
+        </article>
+        <article class="panel">
+          <div class="table-head">
+            <h2>تقرير الخامات المصروفة بالتكلفة</h2>
+            <button class="ghost" id="exportCostReport">تصدير تقرير التكلفة CSV</button>
+          </div>
+          <div id="costReport" class="cards"></div>
+        </article>
+      </section>
+
+      <section id="reports" class="page">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">التقارير</p>
+            <h1>تقارير يومية وأسبوعية وشهرية</h1>
+          </div>
+          <div class="actions">
+            <button class="ghost" id="exportExcel">تصدير Excel</button>
+            <button class="ghost" id="exportPdf">تصدير PDF</button>
+          </div>
+        </div>
+        <article class="panel">
+          <h2>ربط Google Sheet للتقييمات</h2>
+          <div class="grid two">
+            <label>رابط Google Apps Script Web App
+              <input id="googleScriptUrl" placeholder="https://script.google.com/macros/s/.../exec">
+            </label>
+            <div class="actions align-end">
+              <button class="primary" id="saveGoogleScriptUrl" type="button">حفظ الرابط</button>
+              <button class="ghost" id="testGoogleScriptUrl" type="button">اختبار الربط</button>
+            </div>
+          </div>
+          <p class="hint">بعد حفظ الرابط، أي تقييم من QR سيتم حفظه محليًا وإرساله تلقائيًا إلى Google Sheet.</p>
+          <div id="googleSheetStatus" class="import-result"></div>
+        </article>
+        <article class="panel">
+          <div class="filters">
+            <select id="reportRange">
+              <option value="daily">يومي</option>
+              <option value="weekly">أسبوعي</option>
+              <option value="monthly">شهري</option>
+            </select>
+            <input id="reportSite" placeholder="بحث حسب الموقع">
+            <input id="reportSupervisor" placeholder="بحث حسب المشرف">
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>التاريخ</th>
+                  <th>الموقع</th>
+                  <th>المشرف</th>
+                  <th>التقييم</th>
+                  <th>الملاحظات</th>
+                </tr>
+              </thead>
+              <tbody id="reportsTable"></tbody>
+            </table>
+          </div>
+        </article>
+      </section>
+
+      <section id="users" class="page">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">الصلاحيات</p>
+            <h1>المستخدمون وكلمات المرور</h1>
+          </div>
+        </div>
+        <div id="generalManagerOnly" class="panel access-note"></div>
+        <div class="grid two admin-only">
+          <form id="userForm" class="panel form">
+            <h2>إضافة مستخدم</h2>
+            <label>الاسم<input id="userFullName" required placeholder="اسم المستخدم"></label>
+            <label>اليوزر<input id="username" required placeholder="username"></label>
+            <label>الباسورد<input id="password" required type="password" placeholder="password"></label>
+            <label>الدور
+              <select id="userRole" required>
+                <option value="operations_manager">مدير العمليات</option>
+                <option value="supervisor">المشرف</option>
+                <option value="storekeeper">أمين المخزن</option>
+                <option value="general_manager">المدير العام</option>
+              </select>
+            </label>
+            <div>
+              <label>الصلاحيات التي يراها المستخدم</label>
+              <div id="pagePermissions" class="permission-options"></div>
+            </div>
+            <button class="primary" type="submit">حفظ المستخدم</button>
+          </form>
+          <article class="panel">
+            <h2>تحديد الصلاحيات</h2>
+            <div id="permissionMatrix" class="cards"></div>
+          </article>
+        </div>
+        <article class="panel admin-only">
+          <h2>قائمة اليوزر والباسورد</h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>الاسم</th>
+                  <th>اليوزر</th>
+                  <th>الباسورد</th>
+                  <th>الدور</th>
+                  <th>الصلاحيات</th>
+                  <th>إجراء</th>
+                </tr>
+              </thead>
+              <tbody id="usersTable"></tbody>
+            </table>
+          </div>
+        </article>
+        <div class="grid three" id="roleCards"></div>
+      </section>
+
+      <section id="vehicles" class="page">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">حركة السيارات</p>
+            <h1>السيارات والسائقين والمأموريات</h1>
+          </div>
+        </div>
+        <div class="grid two">
+          <form id="driverForm" class="panel form">
+            <h2>إضافة سائق</h2>
+            <label>اسم السائق<input id="newDriverName" required placeholder="اسم السائق"></label>
+            <label>رقم الهاتف<input id="newDriverPhone" placeholder="رقم الهاتف"></label>
+            <button class="primary" type="submit">حفظ السائق</button>
+          </form>
+          <form id="carForm" class="panel form">
+            <h2>إضافة سيارة</h2>
+            <label>رقم السيارة / اللوحة<input id="newVehicleNo" required placeholder="مثال: نقل 1254"></label>
+            <label>نوع السيارة<input id="newVehicleType" placeholder="نقل / ملاكي / فان"></label>
+            <label>عداد الكيلومتر الحالي<input id="newVehicleKm" type="number" min="0" value="0"></label>
+            <label>تغيير الزيت كل كام كيلو<input id="newOilEveryKm" type="number" min="1" value="5000"></label>
+            <label>آخر تغيير زيت عند كيلو<input id="newLastOilKm" type="number" min="0" value="0"></label>
+            <button class="primary" type="submit">حفظ السيارة</button>
+          </form>
+        </div>
+        <div class="grid two">
+          <form id="vehicleForm" class="panel form">
+            <h2>تسجيل حركة سيارة</h2>
+            <label>السيارة<select id="vehicleId" required></select></label>
+            <label>السائق<select id="driverId" required></select></label>
+            <label>رايح فين<input id="vehicleDestination" required placeholder="الموقع أو الوجهة"></label>
+            <label>المأمورية<textarea id="vehicleMission" required placeholder="وصف المأمورية"></textarea></label>
+            <div class="grid two">
+              <label>عداد الكيلومتر الحالي<input id="movementKm" type="number" min="0" value="0"></label>
+              <label>كمية الجاز / البنزين باللتر<input id="fuelLiters" type="number" min="0" step="0.01" value="0"></label>
+            </div>
+            <label>تكلفة الجاز / البنزين<input id="fuelCost" type="number" min="0" step="0.01" value="0"></label>
+            <label>الصيانة التي تمت<textarea id="vehicleMaintenance" placeholder="مثال: تغيير تيل، كاوتش، فلاتر..."></textarea></label>
+            <label class="inline-check"><input id="oilChanged" type="checkbox"> تم تغيير الزيت في هذه الحركة</label>
+            <label>كيلومتر تغيير الزيت<input id="oilKm" type="number" min="0" value="0"></label>
+            <label>الحالة
+              <select id="vehicleStatus">
+                <option value="in_progress">في الطريق</option>
+                <option value="done">تمت المأمورية</option>
+                <option value="delayed">متأخر</option>
+                <option value="cancelled">ملغي</option>
+              </select>
+            </label>
+            <label>ملاحظات<textarea id="vehicleNotes" placeholder="أي ملاحظات إضافية"></textarea></label>
+            <button class="primary" type="submit">حفظ الحركة</button>
+          </form>
+          <article class="panel">
+            <h2>ملخص حركة السيارات</h2>
+            <div id="vehicleSummary" class="cards"></div>
+          </article>
+        </div>
+        <article class="panel">
+          <h2>سجل حركة السيارات</h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>التاريخ</th>
+                  <th>السيارة</th>
+                  <th>السائق</th>
+                  <th>رايح فين</th>
+                  <th>المأمورية</th>
+                  <th>الجاز / البنزين</th>
+                  <th>الصيانة</th>
+                  <th>الزيت</th>
+                  <th>الحالة</th>
+                  <th>ملاحظات</th>
+                </tr>
+              </thead>
+              <tbody id="vehiclesTable"></tbody>
+            </table>
+          </div>
+        </article>
+        <article class="panel">
+          <h2>التقرير اليومي لكل سيارة</h2>
+          <div id="vehicleDailyReport" class="cards"></div>
+        </article>
+      </section>
+    </main>
+
+    <div id="toast" class="toast" role="status"></div>
+    <script src="/app.js?v=logo-ibuild-1"></script>
+  </body>
+</html>
