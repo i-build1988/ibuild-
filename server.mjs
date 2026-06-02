@@ -3,10 +3,11 @@ import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { existsSync, createReadStream } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { tmpdir } from "node:os";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const publicDir = path.join(__dirname, "public");
-const dataDir = path.join(__dirname, "data");
+const dataDir = process.env.NETLIFY ? path.join(tmpdir(), "ibuild-cleaning-system-data") : path.join(__dirname, "data");
 const dataFile = path.join(dataDir, "db.json");
 const port = Number(process.env.PORT || 4180);
 const pageIds = ["dashboard", "sites", "contracts", "inspection", "materials", "reports", "users", "vehicles"];
@@ -191,7 +192,7 @@ function contentType(filePath) {
   }[ext] || "application/octet-stream";
 }
 
-async function api(req, res, url) {
+export async function api(req, res, url) {
   const db = await readJson();
 
   if (req.method === "GET" && url.pathname === "/api/bootstrap") {
@@ -492,6 +493,8 @@ const server = http.createServer(async (req, res) => {
   }
 });
 
-server.listen(port, "127.0.0.1", () => {
-  console.log(`I-BUILD Cleaning System: http://127.0.0.1:${port}`);
-});
+if (!process.env.NETLIFY) {
+  server.listen(port, "127.0.0.1", () => {
+    console.log(`I-BUILD Cleaning System: http://127.0.0.1:${port}`);
+  });
+}

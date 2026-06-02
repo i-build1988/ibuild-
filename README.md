@@ -31,6 +31,23 @@ http://127.0.0.1:4180
 
 يوجد ملف `render.yaml` لتسهيل النشر التلقائي.
 
+## النشر على Netlify
+
+المشروع يحتوي على إعداد Netlify جاهز:
+
+- ملف الإعداد: `netlify.toml`
+- مجلد النشر: `public`
+- مسار الـ API: `/.netlify/functions/api`
+- يتم تحويل `/api/*` تلقائيا إلى Netlify Function
+
+إعدادات Netlify:
+
+- Build command: `npm run build`
+- Publish directory: `public`
+- Functions directory: `netlify/functions`
+
+ملاحظة: Netlify Functions مناسبة للتجربة. حفظ البيانات داخل Netlify ليس دائما في هذه النسخة، وللعمل الحقيقي يجب ربط قاعدة بيانات خارجية مثل PostgreSQL.
+
 ## المكونات
 
 - واجهة عربية RTL متوافقة مع الجوال والتابلت والكمبيوتر.
