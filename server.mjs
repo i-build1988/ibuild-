@@ -10,6 +10,9 @@ const publicDir = path.join(__dirname, "public");
 const dataDir = process.env.NETLIFY ? path.join(tmpdir(), "ibuild-cleaning-system-data") : path.join(__dirname, "data");
 const dataFile = path.join(dataDir, "db.json");
 const port = Number(process.env.PORT || 4180);
+const supabaseUrl = (process.env.SUPABASE_URL || "").replace(/\/$/, "");
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY || "";
+const useSupabase = Boolean(supabaseUrl && supabaseServiceKey);
 const pageIds = ["dashboard", "sites", "contracts", "inspection", "materials", "reports", "users", "vehicles"];
 const defaultPagesByRole = {
   general_manager: pageIds,
@@ -65,6 +68,7 @@ async function ensureDb() {
 }
 
 async function readJson() {
+  if (useSupabase) return readSupabaseJson();
   await ensureDb();
   const raw = (await readFile(dataFile, "utf8")).replace(/^\uFEFF/, "");
   const db = JSON.parse(raw);
@@ -178,7 +182,48 @@ function canonicalDefaultUser(role, user) {
 }
 
 async function writeJson(data) {
+  if (useSupabase) return writeSupabaseJson(data);
   await writeFile(dataFile, JSON.stringify(data, null, 2), "utf8");
+}
+
+async function readSupabaseJson() {
+  const rows = await supabaseRequest(`/rest/v1/ibuild_store?key=eq.main&select=data`, {
+    method: "GET"
+  });
+  if (Array.isArray(rows) && rows[0]?.data) return normalizeDb(rows[0].data);
+  await writeSupabaseJson(seed);
+  return normalizeDb(JSON.parse(JSON.stringify(seed)));
+}
+
+async function writeSupabaseJson(data) {
+  await supabaseRequest("/rest/v1/ibuild_store?on_conflict=key", {
+    method: "POST",
+    headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
+    body: JSON.stringify({
+      key: "main",
+      data,
+      updated_at: new Date().toISOString()
+    })
+  });
+}
+
+async function supabaseRequest(pathname, options = {}) {
+  const response = await fetch(`${supabaseUrl}${pathname}`, {
+    ...options,
+    headers: {
+      apikey: supabaseServiceKey,
+      authorization: `Bearer ${supabaseServiceKey}`,
+      "content-type": "application/json",
+      ...(options.headers || {})
+    }
+  });
+  if (!response.ok) {
+    const detail = await response.text();
+    throw new Error(`supabase_error_${response.status}: ${detail}`);
+  }
+  if (response.status === 204) return null;
+  const text = await response.text();
+  return text ? JSON.parse(text) : null;
 }
 
 function sendJson(res, status, payload) {

@@ -48,6 +48,24 @@ http://127.0.0.1:4180
 
 ملاحظة: Netlify Functions مناسبة للتجربة. حفظ البيانات داخل Netlify ليس دائما في هذه النسخة، وللعمل الحقيقي يجب ربط قاعدة بيانات خارجية مثل PostgreSQL.
 
+## ربط Supabase
+
+لجعل البيانات محفوظة بشكل دائم:
+
+1. أنشئ مشروع Supabase.
+2. افتح SQL Editor داخل Supabase.
+3. انسخ محتوى الملف `db/supabase.sql` وشغله.
+4. من Supabase افتح Project Settings ثم API.
+5. انسخ:
+   - Project URL
+   - service_role key
+6. في Netlify افتح Site settings ثم Environment variables وأضف:
+   - `SUPABASE_URL`
+   - `SUPABASE_SERVICE_ROLE_KEY`
+7. اعمل Redeploy للموقع.
+
+مهم: لا تضع `SUPABASE_SERVICE_ROLE_KEY` داخل ملفات الواجهة أو GitHub. المفتاح يستخدم فقط داخل Netlify Functions.
+
 ## المكونات
 
 - واجهة عربية RTL متوافقة مع الجوال والتابلت والكمبيوتر.
