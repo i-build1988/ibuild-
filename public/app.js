@@ -12,6 +12,25 @@ const state = {
   stats: {}
 };
 
+const fallbackBootstrap = {
+  users: [
+    { id: "u1", fullName: "المدير العام", username: "admin@ibuild.local", email: "admin@ibuild.local", password: "123456", role: "general_manager", active: true, pages: ["dashboard", "sites", "contracts", "inspection", "materials", "reports", "users", "vehicles"] },
+    { id: "u2", fullName: "مدير العمليات", username: "ops@ibuild.local", email: "ops@ibuild.local", password: "123456", role: "operations_manager", active: true, pages: ["dashboard"] },
+    { id: "u3", fullName: "المشرف", username: "supervisor@ibuild.local", email: "supervisor@ibuild.local", password: "123456", role: "supervisor", active: true, pages: ["inspection"] },
+    { id: "u4", fullName: "أمين المخزن", username: "storekeeper", password: "123456", role: "storekeeper", active: true, pages: ["materials"] }
+  ],
+  clients: [{ id: "c1", name: "عميل تجريبي", contactName: "مسؤول الموقع", phone: "", email: "" }],
+  drivers: [],
+  vehicles: [],
+  sites: [{ id: "s1", clientId: "c1", name: "المقر الإداري", address: "القاهرة", city: "القاهرة", status: "active", qrToken: "site-s1" }],
+  contracts: [],
+  inspections: [],
+  materials: [],
+  materialTransactions: [],
+  vehicleMovements: [],
+  stats: { siteCount: 1, supervisorCount: 1, dailyVisits: 0, interventionSites: 0, materialCount: 0, lowStockCount: 0 }
+};
+
 const ratingLabels = {
   excellent: "ممتاز",
   good: "جيد",
@@ -65,11 +84,32 @@ function toast(message) {
 }
 
 async function load() {
-  Object.assign(state, await api("/api/bootstrap"));
+  try {
+    Object.assign(state, await api("/api/bootstrap"));
+  } catch (error) {
+    Object.assign(state, JSON.parse(JSON.stringify(fallbackBootstrap)));
+    toast("تم فتح النظام مؤقتاً بدون اتصال قاعدة البيانات");
+  }
   mergeLocalState();
+  refreshStats();
   restoreSession();
   renderAll();
   applyInitialRoute();
+}
+
+function refreshStats() {
+  const today = new Date().toDateString();
+  const dailyVisits = state.inspections.filter((x) => new Date(x.inspectedAt).toDateString() === today).length;
+  const lowStock = state.materials.filter((x) => Number(x.currentStock) <= Number(x.minStock));
+  state.stats = {
+    ...state.stats,
+    siteCount: state.sites.length,
+    supervisorCount: state.users.filter((x) => x.role === "supervisor").length,
+    dailyVisits,
+    interventionSites: state.inspections.filter((x) => x.rating === "needs_followup" || x.rating === "critical").length,
+    materialCount: state.materials.length,
+    lowStockCount: lowStock.length
+  };
 }
 
 function loadLocalData() {
@@ -93,6 +133,7 @@ function persistLocalState() {
   local.clients = state.clients;
   local.sites = state.sites;
   localStorage.setItem(localDataKey, JSON.stringify(local));
+  refreshStats();
 }
 
 function upsertById(list, item) {
