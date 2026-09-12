@@ -2,7 +2,7 @@
 /**
  * Plugin Name: I-BUILD Food Cloud
  * Description: نظام مركزي لقطاع التغذية والكاترنج مع مستخدمين وصلاحيات وقاعدة بيانات مشتركة.
- * Version: 2.15.0
+ * Version: 2.15.1
  * Author: I-BUILD Egypt
  * Text Domain: ibuild-food-cloud
  */
@@ -11,7 +11,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('IBF_VERSION', '2.15.0');
+define('IBF_VERSION', '2.15.1');
 define('IBF_FILE', __FILE__);
 define('IBF_DIR', plugin_dir_path(__FILE__));
 define('IBF_URL', plugin_dir_url(__FILE__));

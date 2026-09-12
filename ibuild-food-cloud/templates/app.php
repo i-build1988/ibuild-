@@ -2646,8 +2646,8 @@ async function renderUsersPanel(){
           <td>${safeText(permissionLabels)}</td>
           <td style="white-space:nowrap">${user.id===IBF_BOOT.user?.id
             ? '<span style="font-size:.72rem;color:var(--muted)">حسابك</span>'
-            : `<button class="action-btn" onclick="removeManagerUser(${user.id},${JSON.stringify(user.name)},'disable')" title="سحب الصلاحيات مع الاحتفاظ بالسجل">⛔ تعطيل</button>
-               <button class="action-btn danger" onclick="removeManagerUser(${user.id},${JSON.stringify(user.name)},'delete')" title="حذف الحساب نهائيًا">🗑️ مسح</button>`}</td>
+            : `<button class="action-btn" onclick="removeManagerUser(${user.id},${safeText(JSON.stringify(user.name))},'disable')" title="سحب الصلاحيات مع الاحتفاظ بالسجل">⛔ تعطيل</button>
+               <button class="action-btn danger" onclick="removeManagerUser(${user.id},${safeText(JSON.stringify(user.name))},'delete')" title="حذف الحساب نهائيًا">🗑️ مسح</button>`}</td>
         </tr>`;
       }).join('')}</tbody>
     </table></div>`:'<div class="empty"><div class="icon">👥</div><div>لا توجد حسابات تشغيلية بعد</div></div>';
@@ -3136,7 +3136,7 @@ async function renderReviewerPermissions(){
           ${cell('quality',p.can_manage_quality)}
           ${cell('hr',p.can_manage_hr)}
           ${cell('equipment',p.can_manage_equipment)}
-          <td><button class="action-btn" onclick="saveReviewerPermissions(${user.id},${JSON.stringify(user.username)})">حفظ</button></td>
+          <td><button class="action-btn" onclick="saveReviewerPermissions(${user.id},${safeText(JSON.stringify(user.username))})">حفظ</button></td>
         </tr>`;
       }).join('')}</tbody>
     </table></div>`:'<div class="empty"><div class="icon">👥</div><div>لا توجد حسابات لعرضها</div></div>';
@@ -4098,7 +4098,7 @@ async function renderGeneralAdmin(){
   if(list)list.innerHTML=transfers.length?`<div class="master-list">${transfers.slice(0,40).map(transfer=>{
     const item=(transfer.items||[])[0]||{};
     const supplyDetails=transfer.supplyOnly?` · شراء ${Number(item.purchasePrice||0).toFixed(2)} · بيع ${Number(item.salePrice||0).toFixed(2)} · ربح ${Number(item.profit||0).toFixed(2)} ج`:'';
-    return `<div class="master-row"><div><strong>${transfer.supplyOnly?'🚚':'🔄'} ${safeText(item.name||'')}</strong><span>${safeText(transfer.date)} · ${safeText(transfer.fromSite)} (${departmentLabel(transfer.fromDept)}) ← ${safeText(transfer.toSite)} (${departmentLabel(transfer.toDept)}) · ${safeText(transfer.createdBy)}${supplyDetails}</span></div><div><code>${item.qty||0} ${safeText(item.unit||'')}</code>${transfer.supplyOnly?` <button class="action-btn" onclick='printSupplyTransfer(${JSON.stringify(transfer.id)})'>🖨️ إذن صرف</button>`:''}</div></div>`;
+    return `<div class="master-row"><div><strong>${transfer.supplyOnly?'🚚':'🔄'} ${safeText(item.name||'')}</strong><span>${safeText(transfer.date)} · ${safeText(transfer.fromSite)} (${departmentLabel(transfer.fromDept)}) ← ${safeText(transfer.toSite)} (${departmentLabel(transfer.toDept)}) · ${safeText(transfer.createdBy)}${supplyDetails}</span></div><div><code>${item.qty||0} ${safeText(item.unit||'')}</code>${transfer.supplyOnly?` <button class="action-btn" onclick='printSupplyTransfer(${safeText(JSON.stringify(transfer.id))})'>🖨️ إذن صرف</button>`:''}</div></div>`;
   }).join('')}</div>`:'<div class="empty"><div>لا توجد تحويلات مسجلة</div></div>';
 }
 
@@ -5281,7 +5281,7 @@ function renderReturnWaste(){
       const dayRows=returnsRows().filter(item=>item.itemName===row.name&&(item.unit||'')===(row.unit||'')&&item.date===date);
       const inQty=dayRows.filter(item=>item.type==='return').reduce((sum,item)=>sum+(parseFloat(item.qty)||0),0);
       const outQty=dayRows.filter(item=>item.type==='transfer').reduce((sum,item)=>sum+(parseFloat(item.qty)||0),0);
-      return `<tr><td><strong>${safeText(row.name)}</strong> <span style="font-size:.7rem;color:var(--muted)">${safeText(row.unit)}</span></td><td>${opening}</td><td style="color:var(--green)">${inQty}</td><td style="color:var(--red)">${outQty}</td><td><strong>${closing}</strong></td>${canTransfer?`<td><button class="action-btn" onclick="transferFromReturns(${JSON.stringify(row.name)},${JSON.stringify(row.unit||'')})" ${closing<=0?'disabled':''}>🔐 تحويل</button></td>`:''}</tr>`;
+      return `<tr><td><strong>${safeText(row.name)}</strong> <span style="font-size:.7rem;color:var(--muted)">${safeText(row.unit)}</span></td><td>${opening}</td><td style="color:var(--green)">${inQty}</td><td style="color:var(--red)">${outQty}</td><td><strong>${closing}</strong></td>${canTransfer?`<td><button class="action-btn" onclick="transferFromReturns(${safeText(JSON.stringify(row.name))},${safeText(JSON.stringify(row.unit||''))})" ${closing<=0?'disabled':''}>🔐 تحويل</button></td>`:''}</tr>`;
     }).join('')}</tbody></table></div>`:'<div class="empty"><div>لا يوجد رصيد مرتجعات</div></div>';
   }
 
@@ -5461,7 +5461,7 @@ async function renderWarehouseApprovals(){
   let query=supabase_client.from('meal_logs').select('*').eq('log_date',date).order('created_at',{ascending:false});if(site)query=query.eq('site',site);
   const {data,error}=await query;if(error){box.innerHTML='<div class="empty"><div>تعذر تحميل اعتمادات المخزن</div></div>';return;}
   const rows=(data||[]).filter(log=>log.chef_status==='approved'&&log.inventory_posted!==true&&log.warehouse_status!=='rejected');
-  box.innerHTML=rows.length?rows.map(log=>`<div class="ops-card"><div class="ops-card-head"><div><div class="ops-card-title">${safeText(log.meal)} — ${safeText(log.site)}</div><div class="ops-card-meta">المشرف: ${safeText(log.supervisor_name)} · اعتماد الشيف: ${safeText(log.chef_name||'الشيف')} · ${safeText(log.log_time)}</div></div><span class="status-badge pending">بانتظار المخزن</span></div><div class="chef-items-list">${(log.items||[]).map(item=>`<div class="chef-item-tag">${safeText(item.name)} <strong>${item.qty}</strong> ${safeText(item.unit)}</div>`).join('')}</div><div class="ops-actions"><button class="chef-approve-btn" onclick="approveWarehouseIssue(${JSON.stringify(log.id)},this)">✅ اعتماد الصرف والخصم</button><button class="chef-reject-btn" onclick="rejectWarehouseIssue(${JSON.stringify(log.id)})">رفض المخزن</button></div></div>`).join(''):'<div class="empty"><div class="icon">✅</div><div>لا توجد طلبات بانتظار اعتماد المخزن</div></div>';
+  box.innerHTML=rows.length?rows.map(log=>`<div class="ops-card"><div class="ops-card-head"><div><div class="ops-card-title">${safeText(log.meal)} — ${safeText(log.site)}</div><div class="ops-card-meta">المشرف: ${safeText(log.supervisor_name)} · اعتماد الشيف: ${safeText(log.chef_name||'الشيف')} · ${safeText(log.log_time)}</div></div><span class="status-badge pending">بانتظار المخزن</span></div><div class="chef-items-list">${(log.items||[]).map(item=>`<div class="chef-item-tag">${safeText(item.name)} <strong>${item.qty}</strong> ${safeText(item.unit)}</div>`).join('')}</div><div class="ops-actions"><button class="chef-approve-btn" onclick="approveWarehouseIssue(${safeText(JSON.stringify(log.id))},this)">✅ اعتماد الصرف والخصم</button><button class="chef-reject-btn" onclick="rejectWarehouseIssue(${safeText(JSON.stringify(log.id))})">رفض المخزن</button></div></div>`).join(''):'<div class="empty"><div class="icon">✅</div><div>لا توجد طلبات بانتظار اعتماد المخزن</div></div>';
 }
 async function approveWarehouseIssue(id,button){
   if(!supabase_client)return;
@@ -5864,11 +5864,11 @@ async function renderChefPage(){
       </div>
       ${!st?`
       <div class="chef-actions">
-        <button class="chef-approve-btn" onclick="chefApprove(${JSON.stringify(log.id)}, this)">✅ موافقة على الصرف</button>
-        <button class="chef-reject-btn" onclick="chefReject(${JSON.stringify(log.id)}, this)">❌ رفض</button>
+        <button class="chef-approve-btn" onclick="chefApprove(${safeText(JSON.stringify(log.id))}, this)">✅ موافقة على الصرف</button>
+        <button class="chef-reject-btn" onclick="chefReject(${safeText(JSON.stringify(log.id))}, this)">❌ رفض</button>
       </div>`:''}
       <textarea class="chef-notes-input" id="notes-${log.id}" rows="2" placeholder="ملاحظات الشيف... (مشاكل، أصناف مش اتصرفت، أي تعليق)">${log.chef_notes||''}</textarea>
-      ${!st||st?`<button onclick="saveChefNotes(${JSON.stringify(log.id)})" style="margin-top:.4rem;padding:.4rem .9rem;border-radius:8px;border:1.5px solid var(--blue);background:none;color:var(--blue);font-family:'Cairo',sans-serif;font-size:.8rem;font-weight:700;cursor:pointer;">💾 حفظ الملاحظات</button>`:''}
+      ${!st||st?`<button onclick="saveChefNotes(${safeText(JSON.stringify(log.id))})" style="margin-top:.4rem;padding:.4rem .9rem;border-radius:8px;border:1.5px solid var(--blue);background:none;color:var(--blue);font-family:'Cairo',sans-serif;font-size:.8rem;font-weight:700;cursor:pointer;">💾 حفظ الملاحظات</button>`:''}
     </div>`;
   });
   container.innerHTML=html;
