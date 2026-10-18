@@ -1,0 +1,15 @@
+{
+  "name": "fitness-force-3d",
+  "version": "0.2.0",
+  "description": "Fitness Force interactive 3D club \u2014 real GLB architectural model (phase 1 correction)",
+  "scripts": {
+    "start": "npx serve .",
+    "build": "node build.mjs"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "esbuild": "^0.28.2"
+  },
+  "private": true
+}
